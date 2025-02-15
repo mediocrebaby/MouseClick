@@ -6,15 +6,53 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <conio.h>
+
+// 添加Windows全局热键检测函数
+bool checkEscapeKey()
+{
+    return (GetAsyncKeyState(VK_ESCAPE) & 0x8000);
+}
+
 #elif defined(__APPLE__)
 #include <ApplicationServices/ApplicationServices.h>
 #include <termios.h>
 #include <unistd.h>
+
+// 添加用于MacOS的全局热键检测
+bool checkEscapeKey()
+{
+    CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
+    if (!source)
+        return false;
+
+    bool escapePressed = CGEventSourceKeyState(kCGEventSourceStateHIDSystemState, 53);
+
+    CFRelease(source);
+    return escapePressed;
+}
+
 #else // Linux
 #include <X11/Xlib.h>
 #include <X11/extensions/XTest.h>
+#include <X11/keysym.h>
 #include <termios.h>
 #include <unistd.h>
+
+// 添加用于Linux的全局热键检测
+bool checkEscapeKey()
+{
+    Display *display = XOpenDisplay(NULL);
+    if (!display)
+        return false;
+
+    char keys[32];
+    XQueryKeymap(display, keys);
+    KeyCode escapeKeycode = XKeysymToKeycode(display, XK_Escape);
+    bool pressed = !!(keys[escapeKeycode >> 3] & (1 << (escapeKeycode & 7)));
+
+    XCloseDisplay(display);
+    return pressed;
+}
 #endif
 
 #if defined(__APPLE__) || defined(__linux__)
@@ -87,6 +125,8 @@ void MouseClick::start(int durationSeconds, int intervalMilliSeconds)
     isRunning = true;
     auto startTime = std::chrono::steady_clock::now();
 
+    std::cout << "程序已启动，按ESC键退出...\n";
+
     while (isRunning)
     {
         auto currentTime = std::chrono::steady_clock::now();
@@ -100,10 +140,27 @@ void MouseClick::start(int durationSeconds, int intervalMilliSeconds)
         }
 
         click();
-        std::this_thread::sleep_for(std::chrono::milliseconds(intervalMilliSeconds));
+
+        // 将等待时间分成多个100ms的小段
+        int remainingWait = intervalMilliSeconds;
+        while (remainingWait > 0 && isRunning)
+        {
+            // 每次等待100ms或剩余的时间（如果小于100ms）
+            int waitTime = std::min(100, remainingWait);
+            std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
+            remainingWait -= waitTime;
+
+            // 检查ESC键是否被按下
+            if (checkEscapeKey())
+            {
+                std::cout << "检测到ESC键，程序退出\n";
+                isRunning = false;
+                break;
+            }
+        }
     }
 
-    if (durationSeconds != -1)
+    if (durationSeconds != -1 && isRunning)
     {
         std::cout << "运行时间到达，程序退出\n";
     }
