@@ -5,6 +5,10 @@
 #include <chrono>
 #include <string.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 void printUsage()
 {
     std::cout << "用法: mouse_click [选项]\n"
@@ -69,7 +73,7 @@ bool parseArguments(int argc, char *argv[], int &durationSeconds, int &intervalM
                 return false;
             }
         }
-        catch (const std::exception &e)
+        catch (const std::exception&)
         {
             std::cout << "错误: 参数值无效\n";
             return false;
@@ -80,9 +84,15 @@ bool parseArguments(int argc, char *argv[], int &durationSeconds, int &intervalM
 
 int main(int argc, char *argv[])
 {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
+
     int durationSeconds = 60;        // 默认1分钟
     int intervalMilliSeconds = 1000; // 默认1000毫秒
     int delaySeconds = 10;
+
 
     if (!parseArguments(argc, argv, durationSeconds, intervalMilliSeconds, delaySeconds))
     {
@@ -96,7 +106,7 @@ int main(int argc, char *argv[])
               << "- 点击间隔: " << intervalMilliSeconds << "毫秒\n"
               << "- 开始延迟: " << delaySeconds << "秒\n\n";
 
-    std::cout << "倒计时开始...\n";
+    std::cout << "倒计时开始\n";
 
     for (int i = delaySeconds; i > 0; i--)
     {

@@ -4,6 +4,7 @@
 #include <iostream>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <windows.h>
 #include <conio.h>
 
@@ -146,7 +147,7 @@ void MouseClick::start(int durationSeconds, int intervalMilliSeconds)
         while (remainingWait > 0 && isRunning)
         {
             // 每次等待100ms或剩余的时间（如果小于100ms）
-            int waitTime = std::min(100, remainingWait);
+            int waitTime = std::min(100,remainingWait);
             std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
             remainingWait -= waitTime;
 
