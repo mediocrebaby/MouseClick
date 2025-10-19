@@ -3,6 +3,7 @@ project(MouseClick)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # 添加源文件
 set(SOURCES
@@ -30,4 +31,4 @@ else()
     # Linux平台
     find_package(X11 REQUIRED)
     target_link_libraries(mouse_click ${X11_LIBRARIES} Xtst)
-endif() 
+endif()
